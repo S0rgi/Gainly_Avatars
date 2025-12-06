@@ -1,0 +1,234 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Gainly Avatars API",
+    "version": "1.0",
+    "description": "API для управления аватарками пользователей",
+    "contact": {
+      "name": "API Support",
+      "url": "http://www.swagger.io/support",
+      "email": "support@swagger.io"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "host": "localhost:8080",
+  "basePath": "/api",
+  "schemes": ["http", "https"],
+  "securityDefinitions": {
+    "BearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Введите токен в формате: Bearer {token}"
+    }
+  },
+  "paths": {
+    "/avatar": {
+      "post": {
+        "tags": ["avatars"],
+        "summary": "Загрузить аватарку",
+        "description": "Загружает новую аватарку для текущего пользователя",
+        "consumes": ["multipart/form-data"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "avatar",
+            "in": "formData",
+            "type": "file",
+            "required": true,
+            "description": "Файл аватарки"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GUID загруженной аватарки",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "guid": {
+                  "type": "string",
+                  "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/avatars": {
+      "post": {
+        "tags": ["avatars"],
+        "summary": "Получить аватарки по username",
+        "description": "Возвращает URL аватарок для списка пользователей",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GetAvatarsRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Карта username -> URL",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "example": {
+                "user1": "https://r2.example.com/avatars/guid1",
+                "user2": "https://r2.example.com/avatars/guid2"
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/avatar/me": {
+      "get": {
+        "tags": ["avatars"],
+        "summary": "Получить свою аватарку",
+        "description": "Возвращает URL аватарки текущего пользователя",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "URL аватарки",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "example": "https://r2.example.com/avatars/550e8400-e29b-41d4-a716-446655440000"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Аватарка не найдена",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["avatars"],
+        "summary": "Удалить свою аватарку",
+        "description": "Удаляет аватарку текущего пользователя",
+        "responses": {
+          "204": {
+            "description": "Аватарка успешно удалена"
+          },
+          "401": {
+            "description": "Не авторизован",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Аватарка не найдена",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "GetAvatarsRequest": {
+      "type": "object",
+      "required": ["usernames"],
+      "properties": {
+        "usernames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": ["user1", "user2"]
+        }
+      }
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string",
+          "example": "error message"
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "avatars",
+      "description": "Операции с аватарками"
+    }
+  ]
+}
+
