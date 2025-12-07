@@ -1,0 +1,49 @@
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  fly-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Set up Go
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.25"
+
+      # 3. Install Fly CLI
+      - name: Install Fly CLI
+        run: |
+          curl -L https://fly.io/install.sh | sh
+          export PATH="$HOME/.fly/bin:$PATH"
+          fly --version
+
+      # 4. Authenticate Fly
+      - name: Fly authentication
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          export PATH="$HOME/.fly/bin:$PATH"
+          fly auth token $FLY_API_TOKEN
+
+      # 5. Build Docker image (optional, Fly can also build itself)
+      - name: Build Docker image
+        run: |
+          docker build -t go_app .
+
+      # 6. Deploy to Fly.io
+      - name: Deploy to Fly
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          export PATH="$HOME/.fly/bin:$PATH"
+          fly deploy --remote-only --image go_app
