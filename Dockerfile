@@ -23,8 +23,8 @@ FROM alpine:latest
 WORKDIR /app
 RUN apk add --no-cache ca-certificates
 
-# Копируем бинарник
 COPY --from=builder /app/app .
+COPY --from=builder /app/docs ./docs
 
 EXPOSE 8080
 

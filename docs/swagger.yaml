@@ -10,7 +10,6 @@ definitions:
           type: string
         type: array
     type: object
-host: localhost:8080
 info:
   contact:
     email: support@swagger.io
