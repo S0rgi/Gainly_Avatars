@@ -95,6 +95,7 @@ func main() {
 
 	// Avatar routes
 	api.HandleFunc("/avatar", handlers.AddAvatar).Methods("POST")
+	api.HandleFunc("/avatar", handlers.GetAvatar).Methods("GET")
 	api.HandleFunc("/avatars", handlers.GetAvatarsByUsernames).Methods("POST")
 	api.HandleFunc("/avatar/me", handlers.GetMyAvatar).Methods("GET")
 	api.HandleFunc("/avatar/me", handlers.DeleteMyAvatar).Methods("DELETE")

@@ -30,7 +30,7 @@ func NewHandlers(avatarService *services.AvatarService) *Handlers {
 // @Failure 401 {object} map[string]string "Не авторизован"
 // @Failure 500 {object} map[string]string "Внутренняя ошибка сервера"
 // @Security BearerAuth
-// @Router /api/avatar [post]
+// @Router /avatar [post]
 func (h *Handlers) AddAvatar(w http.ResponseWriter, r *http.Request) {
 	// Получаем пользователя из контекста
 	user, ok := middleware.GetUserFromContext(r.Context())
@@ -83,6 +83,37 @@ func (h *Handlers) AddAvatar(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetAvatar обрабатывает получение аватарки по username
+// @Summary Получить аватарку по username
+// @Description Возвращает URL аватарки указанного пользователя
+// @Tags avatars
+// @Produce json
+// @Param username query string true "Имя пользователя"
+// @Success 200 {object} map[string]string "URL аватарки"
+// @Failure 400 {object} map[string]string "Ошибка валидации"
+// @Failure 404 {object} map[string]string "Аватарка не найдена"
+// @Failure 500 {object} map[string]string "Внутренняя ошибка сервера"
+// @Security BearerAuth
+// @Router /avatar [get]
+func (h *Handlers) GetAvatar(w http.ResponseWriter, r *http.Request) {
+	username := r.URL.Query().Get("username")
+
+	if username == "" {
+		respondWithError(w, http.StatusBadRequest, "username is required")
+		return
+	}
+
+	url, err := h.avatarService.GetMyAvatar(r.Context(), username)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, map[string]string{
+		"url": url,
+	})
+}
+
 // GetAvatarsByUsernames обрабатывает получение аватарок по списку username
 // @Summary Получить аватарки по username
 // @Description Возвращает URL аватарок для списка пользователей
@@ -93,7 +124,7 @@ func (h *Handlers) AddAvatar(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} map[string]string "Карта username -> URL"
 // @Failure 400 {object} map[string]string "Ошибка валидации"
 // @Failure 500 {object} map[string]string "Внутренняя ошибка сервера"
-// @Router /api/avatars [post]
+// @Router /avatars [post]
 func (h *Handlers) GetAvatarsByUsernames(w http.ResponseWriter, r *http.Request) {
 	var request struct {
 		Usernames []string `json:"usernames"`
@@ -128,7 +159,7 @@ func (h *Handlers) GetAvatarsByUsernames(w http.ResponseWriter, r *http.Request)
 // @Failure 401 {object} map[string]string "Не авторизован"
 // @Failure 404 {object} map[string]string "Аватарка не найдена"
 // @Security BearerAuth
-// @Router /api/avatar/me [get]
+// @Router /avatar/me [get]
 func (h *Handlers) GetMyAvatar(w http.ResponseWriter, r *http.Request) {
 	// Получаем пользователя из контекста
 	user, ok := middleware.GetUserFromContext(r.Context())
@@ -158,7 +189,7 @@ func (h *Handlers) GetMyAvatar(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} map[string]string "Аватарка не найдена"
 // @Failure 500 {object} map[string]string "Внутренняя ошибка сервера"
 // @Security BearerAuth
-// @Router /api/avatar/me [delete]
+// @Router /avatar/me [delete]
 func (h *Handlers) DeleteMyAvatar(w http.ResponseWriter, r *http.Request) {
 	// Получаем пользователя из контекста
 	user, ok := middleware.GetUserFromContext(r.Context())

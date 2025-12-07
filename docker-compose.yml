@@ -8,9 +8,8 @@ services:
     container_name: go_app
     env_file:
       - .env
-    ports:
+    ports:  
       - "8080:8080"
     restart: unless-stopped
     environment:
       GIN_MODE: "release"
-    # volumes: не монтировать, иначе бинарник пропадет

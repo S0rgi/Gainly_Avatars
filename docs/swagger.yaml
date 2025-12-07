@@ -1,0 +1,212 @@
+basePath: /api
+definitions:
+  handlers.GetAvatarsRequest:
+    properties:
+      usernames:
+        example:
+        - user1
+        - user2
+        items:
+          type: string
+        type: array
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: API для управления аватарками пользователей
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Gainly Avatars API
+  version: "1.0"
+paths:
+  /avatar:
+    get:
+      description: Возвращает URL аватарки указанного пользователя
+      parameters:
+      - description: Имя пользователя
+        in: query
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: URL аватарки
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Ошибка валидации
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Аватарка не найдена
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Получить аватарку по username
+      tags:
+      - avatars
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загружает новую аватарку для текущего пользователя
+      parameters:
+      - description: Файл аватарки
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: GUID загруженной аватарки
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Ошибка валидации
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Загрузить аватарку
+      tags:
+      - avatars
+  /avatar/me:
+    delete:
+      description: Удаляет аватарку текущего пользователя
+      responses:
+        "204":
+          description: Аватарка успешно удалена
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Аватарка не найдена
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Удалить свою аватарку
+      tags:
+      - avatars
+    get:
+      description: Возвращает URL аватарки текущего пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: URL аватарки
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Аватарка не найдена
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Получить свою аватарку
+      tags:
+      - avatars
+  /avatars:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает URL аватарок для списка пользователей
+      parameters:
+      - description: Список username
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.GetAvatarsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Карта username -> URL
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Ошибка валидации
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить аватарки по username
+      tags:
+      - avatars
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: 'Введите токен в формате: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
