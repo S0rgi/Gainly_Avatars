@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -101,60 +100,30 @@ func main() {
 	api.HandleFunc("/avatar/me", handlers.DeleteMyAvatar).Methods("DELETE")
 
 	// Swagger JSON - загружаем из файла (должен быть перед Swagger UI)
-	router.HandleFunc("/swagger/doc.json", func(w http.ResponseWriter, r *http.Request) {
+	router.PathPrefix("/swagger/doc.json").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
-		// Пробуем несколько возможных путей
 		possiblePaths := []string{
-			filepath.Join("docs", "swagger.json"),      // Относительно рабочей директории
-			filepath.Join(".", "docs", "swagger.json"), // Текущая директория
+			filepath.Join("docs", "swagger.json"),
+			filepath.Join(".", "docs", "swagger.json"),
 		}
 
-		// Добавляем путь относительно рабочей директории
 		if wd, err := os.Getwd(); err == nil {
 			possiblePaths = append(possiblePaths, filepath.Join(wd, "docs", "swagger.json"))
 		}
 
 		var data []byte
 		var err error
-		var foundPath string
-
 		for _, path := range possiblePaths {
 			data, err = os.ReadFile(path)
 			if err == nil {
-				foundPath = path
 				break
 			}
 		}
 
 		if err != nil {
-			log.Printf("Failed to load swagger.json. Tried paths: %v. Error: %v", possiblePaths, err)
-			// Возвращаем базовую структуру, если файл не найден
-			basicSwagger := map[string]interface{}{
-				"swagger": "2.0",
-				"info": map[string]interface{}{
-					"title":       "Gainly Avatars API",
-					"version":     "1.0",
-					"description": "API для управления аватарками пользователей",
-				},
-				"host":     "localhost:" + cfg.ServerPort,
-				"basePath": "/api",
-				"schemes":  []string{"http", "https"},
-				"paths":    map[string]interface{}{},
-			}
-			if err := json.NewEncoder(w).Encode(basicSwagger); err != nil {
-				http.Error(w, "Internal server error", http.StatusInternalServerError)
-			}
-			return
-		}
-
-		log.Printf("Loaded swagger.json from: %s", foundPath)
-
-		// Валидируем JSON
-		var swaggerDoc map[string]interface{}
-		if err := json.Unmarshal(data, &swaggerDoc); err != nil {
-			log.Printf("Invalid swagger.json: %v", err)
-			http.Error(w, "Invalid swagger documentation", http.StatusInternalServerError)
+			log.Printf("Failed to load swagger.json: %v", err)
+			http.Error(w, "Swagger JSON not found", http.StatusInternalServerError)
 			return
 		}
 
@@ -167,6 +136,9 @@ func main() {
 		httpSwagger.DocExpansion("none"),
 		httpSwagger.DomID("swagger-ui"),
 	))
+	router.HandleFunc("/swagger", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, r.URL.Path+"/", http.StatusMovedPermanently)
+	})
 
 	// Health check
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
