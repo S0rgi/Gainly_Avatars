@@ -10,6 +10,12 @@ definitions:
           type: string
         type: array
     type: object
+  handlers.UploadAvatarFromURLRequest:
+    properties:
+      url:
+        example: https://t.me/i/userpic/...
+        type: string
+    type: object
 info:
   contact:
     email: support@swagger.io
@@ -161,6 +167,50 @@ paths:
       security:
       - BearerAuth: []
       summary: Получить свою аватарку
+      tags:
+      - avatars
+  /avatar/url:
+    post:
+      consumes:
+      - application/json
+      description: Загружает аватарку из внешнего URL (например Telegram File API)
+      parameters:
+      - description: URL изображения
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UploadAvatarFromURLRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: GUID загруженной аватарки
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Ошибка валидации
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка загрузки или хранения
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Загрузить аватарку по URL
       tags:
       - avatars
   /avatars:

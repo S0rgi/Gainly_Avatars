@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/S0rgi/Gainly_Avatars/internal/middleware"
@@ -208,7 +210,110 @@ func (h *Handlers) DeleteMyAvatar(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// UploadAvatarFromURL загружает аватарку по URL (например Telegram)
+// @Summary Загрузить аватарку по URL
+// @Description Загружает аватарку из внешнего URL (например Telegram File API)
+// @Tags avatars
+// @Accept json
+// @Produce json
+// @Param request body UploadAvatarFromURLRequest true "URL изображения"
+// @Success 200 {object} map[string]string "GUID загруженной аватарки"
+// @Failure 400 {object} map[string]string "Ошибка валидации"
+// @Failure 401 {object} map[string]string "Не авторизован"
+// @Failure 500 {object} map[string]string "Ошибка загрузки или хранения"
+// @Security BearerAuth
+// @Router /avatar/url [post]
+func (h *Handlers) UploadAvatarFromURL(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		respondWithError(w, http.StatusUnauthorized, "User not found in context")
+		return
+	}
+
+	var req UploadAvatarFromURLRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid JSON body")
+		return
+	}
+
+	if req.URL == "" {
+		respondWithError(w, http.StatusBadRequest, "url is required")
+		return
+	}
+
+	// Загружаем файл
+	resp, err := http.Get(req.URL)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Failed to download file")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respondWithError(w, http.StatusBadRequest, "Remote server returned error")
+		return
+	}
+
+	// Определяем content-type
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+
+	// Определяем длину (если Telegram не даёт — читаем вручную)
+	contentLength := resp.ContentLength
+	if contentLength <= 0 {
+		// Чтение в память для получения размера
+		fileData, err := io.ReadAll(resp.Body)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Failed to read file")
+			return
+		}
+
+		contentLength = int64(len(fileData))
+		fileReader := io.NopCloser(bytes.NewReader(fileData))
+
+		guid, err := h.avatarService.AddAvatar(
+			r.Context(),
+			user.Username,
+			fileReader,
+			"avatar.jpg", // или req.URL basename?
+			contentType,
+			contentLength,
+		)
+
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		respondWithJSON(w, http.StatusOK, map[string]string{"guid": guid})
+		return
+	}
+
+	// Если Content-Length есть — передаем поток напрямую
+	guid, err := h.avatarService.AddAvatar(
+		r.Context(),
+		user.Username,
+		resp.Body,
+		"avatar.jpg", // filename можно извлечь из URL
+		contentType,
+		contentLength,
+	)
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, map[string]string{"guid": guid})
+}
+
 // Вспомогательные функции для ответов
+
+type UploadAvatarFromURLRequest struct {
+	URL string `json:"url" example:"https://t.me/i/userpic/..."`
+}
 
 type GetAvatarsRequest struct {
 	Usernames []string `json:"usernames" example:"user1,user2"`

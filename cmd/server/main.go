@@ -98,6 +98,7 @@ func main() {
 	api.HandleFunc("/avatars", handlers.GetAvatarsByUsernames).Methods("POST")
 	api.HandleFunc("/avatar/me", handlers.GetMyAvatar).Methods("GET")
 	api.HandleFunc("/avatar/me", handlers.DeleteMyAvatar).Methods("DELETE")
+	api.HandleFunc("/avatar/url", handlers.UploadAvatarFromURL).Methods("POST")
 
 	// Swagger JSON - загружаем из файла (должен быть перед Swagger UI)
 	router.PathPrefix("/swagger/doc.json").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
