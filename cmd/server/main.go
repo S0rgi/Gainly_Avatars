@@ -12,7 +12,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
-	"github.com/rs/cors"
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/S0rgi/Gainly_Avatars/internal/clients"
@@ -148,17 +147,10 @@ func main() {
 		w.Write([]byte("OK"))
 	}).Methods("GET")
 
-	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"}, // или "https://your-frontend.com"
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Authorization", "Content-Type"},
-		AllowCredentials: true,
-	}).Handler(router)
-
 	// Настраиваем HTTP сервер
 	srv := &http.Server{
 		Addr:         ":" + cfg.ServerPort,
-		Handler:      corsHandler,
+		Handler:      router,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
